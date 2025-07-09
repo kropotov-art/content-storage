@@ -17,16 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.kropotov.storage.domain.model.File;
 import ru.kropotov.storage.domain.model.FileState;
@@ -36,6 +27,7 @@ import ru.kropotov.storage.web.dto.RenameRequest;
 import ru.kropotov.storage.web.dto.UploadMetaDto;
 import ru.kropotov.storage.web.dto.request.UploadRequest;
 import ru.kropotov.storage.web.mapper.FileMapper;
+import ru.kropotov.storage.web.validation.NonEmptyFile;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -54,6 +46,7 @@ public class FileController {
 
     private final FileFacade fileFacade;
     private final FileMapper fileMapper;
+
     @PostMapping(
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -69,7 +62,7 @@ public class FileController {
     )
     public ResponseEntity<FileDto> upload(
             @AuthenticationPrincipal(expression = "name") String userId,
-            @Valid @RequestPart("file") MultipartFile file,
+            @NonEmptyFile @RequestPart("file") MultipartFile file,
             @Valid @RequestPart("meta") UploadMetaDto meta) throws IOException {
 
         File savedFile = fileFacade.upload(userId, file, meta);

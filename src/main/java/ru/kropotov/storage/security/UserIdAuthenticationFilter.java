@@ -59,11 +59,4 @@ public class UserIdAuthenticationFilter extends OncePerRequestFilter {
                 requestURI.startsWith("/swagger-ui/") ||
                 requestURI.startsWith("/v3/api-docs/");
     }
-
-    record UserIdPrincipal(String name) implements java.security.Principal {
-        @Override
-        public String getName() {
-            return name;
-        }
-    }
 }

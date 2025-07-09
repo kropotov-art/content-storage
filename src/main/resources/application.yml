@@ -8,6 +8,7 @@ spring:
       password: root
       authentication-database: admin
       database: content_storage
+      auto-index-creation: true
   servlet:
     multipart:
       enabled: true            # ???????? StandardServletMultipartResolver

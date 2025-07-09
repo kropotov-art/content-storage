@@ -35,17 +35,14 @@ public class FileService {
 
     @Transactional(rollbackFor = Exception.class)
     public File reserveId(FileMeta fileMeta) {
-        tagService.validateAndNormalizeTags(fileMeta.getTags());
-
-        tagService.createMissingTags(fileMeta.getTags());
+        tagService.ensureExists(fileMeta.getTags());
 
         File file = File.builder()
                 .ownerId(fileMeta.getOwnerId())
                 .fileName(fileMeta.getFileName())
-                .fileNameLower(fileMeta.getFileName().trim().toLowerCase())
                 .contentType(fileMeta.getContentType())
                 .sizeBytes(0L)
-                .sha256("PENDING")
+                .sha256(null)
                 .visibility(fileMeta.getVisibility())
                 .tags(fileMeta.getTags())
                 .uploadTs(Instant.now())
@@ -145,6 +142,9 @@ public class FileService {
     public Page<File> getUserFiles(String userId, Optional<String> tag, Pageable pageable) {
         if (tag.isPresent() && !tag.get().trim().isEmpty()) {
             String normalizedTag = tag.get().trim().toLowerCase();
+            if (!tagService.tagExists(normalizedTag)) {
+                throw new FileNotFoundException("Tag not found: " + tag.get());
+            }
             return fileRepository.findByOwnerIdAndStateAndTagsIn(userId, FileState.READY,
                     List.of(normalizedTag), pageable);
         }
@@ -154,6 +154,9 @@ public class FileService {
     public Page<File> getPublicFiles(Optional<String> tag, Pageable pageable) {
         if (tag.isPresent() && !tag.get().trim().isEmpty()) {
             String normalizedTag = tag.get().trim().toLowerCase();
+            if (!tagService.tagExists(normalizedTag)) {
+                throw new FileNotFoundException("Tag not found: " + tag.get());
+            }
             return fileRepository.findByVisibilityAndStateAndTagsIn(Visibility.PUBLIC, FileState.READY,
                     List.of(normalizedTag), pageable);
         }
@@ -169,7 +172,6 @@ public class FileService {
         }
 
         file.setFileName(newName);
-        file.setFileNameLower(newName.trim().toLowerCase());
 
         try {
             return fileRepository.save(file);

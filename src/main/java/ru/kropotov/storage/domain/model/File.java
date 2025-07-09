@@ -12,11 +12,15 @@ import java.util.List;
 
 @Document(collection = "files")
 @CompoundIndexes({
-    @CompoundIndex(name = "owner_name", def = "{'ownerId':1,'fileNameLower':1}", unique = true),
-    @CompoundIndex(name = "owner_hash", def = "{'ownerId':1,'sha256':1}", unique = true),
-    @CompoundIndex(def = "{'visibility':1}"),
-    @CompoundIndex(def = "{'tags':1}"),
-    @CompoundIndex(def = "{'state':1,'uploadTs':1}")
+        @CompoundIndex(name = "owner_name", def = "{'ownerId':1,'fileName':1}", unique = true),
+        @CompoundIndex(
+                name = "ux_owner_sha_ready",
+                def = "{'ownerId':1,'sha256':1,'state':1}",
+                unique = true,
+                partialFilter = "{ state: 'READY' }"),
+        @CompoundIndex(def = "{'visibility':1}"),
+        @CompoundIndex(def = "{'tags':1}"),
+        @CompoundIndex(def = "{'state':1,'uploadTs':1}")
 })
 @Getter
 @Setter
@@ -24,12 +28,11 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class File {
-    
+
     @Id
     private String id;
     private String ownerId;
     private String fileName;
-    private String fileNameLower;
     private String contentType;
     private long sizeBytes;
     private String sha256;
@@ -40,5 +43,5 @@ public class File {
     private String objectStoreKey;
     @Indexed
     private FileState state;
-    
+
 }
