@@ -3,7 +3,7 @@ FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 
 # Copy Gradle wrapper and build files for dependency resolution
-COPY gradlew settings.gradle.kts build.gradle.kts gradle/ ./
+COPY gradlew settings.gradle build.gradle gradle/ ./
 RUN chmod +x gradlew
 
 # Download dependencies to cache them
