@@ -1,14 +1,18 @@
 # syntax=docker/dockerfile:1
 
 # ─── Stage 1: Build the application ──────────────────────────────────
-FROM alpine/java:21-jdk AS build
+# Use official Gradle image with Java 21 for building
+FROM gradle:8.1.1-jdk21 AS build
 WORKDIR /app
 
 # Copy project files (including Gradle wrapper)
 COPY --chown=gradle:gradle . .
 
-# Build the fat JAR
-RUN gradle clean bootJar --no-daemon
+# Ensure gradlew wrapper is executable
+RUN chmod +x gradlew
+
+# Build the fat JAR using wrapper
+RUN ./gradlew clean bootJar --no-daemon
 
 
 # ─── Stage 2: Create the runtime image ──────────────────────────────
