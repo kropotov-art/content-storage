@@ -1,0 +1,34 @@
+# Build artifacts
+build/
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+
+# IDE files
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Version control
+.git/
+.gitignore
+
+# Documentation and configs not needed in container
+README.md
+.claude/
+ops/
+
+# Test files and temporary data
+src/test/
+*.log
+*.tmp
+
+# Docker files
+Dockerfile
+.dockerignore
+docker-compose.yml
