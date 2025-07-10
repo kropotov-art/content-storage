@@ -70,6 +70,9 @@ jobs:
             curl --fail -sS http://localhost:$PORT/actuator/openapi > build/openapi/openapi.yaml
           fi
 
+      - name: Copy OpenAPI spec to docs
+        run: cp build/openapi/openapi.yaml docs/openapi.yaml
+
       - name: Install redoc-cli
         run: npm install -g redoc-cli
 
