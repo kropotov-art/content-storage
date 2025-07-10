@@ -80,82 +80,11 @@ volumes:
   minio_data:
 ```
 
-## API Documentation
+## API Reference
 
-### File Operations
+[![OpenAPI Docs](https://img.shields.io/badge/docs-ReDoc-orange)](https://artemkropotov.github.io/content-storage/docs)
 
-#### Upload File
-```bash
-POST /api/files
-Content-Type: multipart/form-data
-X-User-Id: user123
-
-# Form data:
-file: <binary-data>
-meta: {
-  "fileName": "document.pdf",
-  "visibility": "PUBLIC",
-  "tags": ["invoice", "tax", "2024"]
-}
-```
-
-#### List Files
-```bash
-# List user's files
-GET /api/files
-X-User-Id: user123
-
-# List public files
-GET /api/files/public
-
-# Filter by tag (case-insensitive)
-GET /api/files/public?tag=invoice
-
-# Pagination and sorting
-GET /api/files?page=0&size=10&sort=uploadTs,desc
-```
-
-#### Download File
-```bash
-GET /api/files/{fileId}/download
-X-User-Id: user123
-
-# Public file download (no auth required)
-GET /api/files/{fileId}/download/{secret}
-```
-
-#### Rename File
-```bash
-PUT /api/files/{fileId}/rename
-X-User-Id: user123
-Content-Type: application/json
-
-{
-  "newFileName": "renamed-document.pdf"
-}
-```
-
-#### Delete File
-```bash
-DELETE /api/files/{fileId}
-X-User-Id: user123
-```
-
-### Tags (Drive-style)
-
-#### Get All Tags
-```bash
-GET /api/tags
-```
-
-**Features:**
-- **0-5 tags per file**: Maximum 5 tags, minimum 0
-- **Case-insensitive**: "Invoice", "INVOICE", "invoice" are treated as same tag
-- **Open vocabulary**: No predefined tag list, tags created on-demand
-- **Validation**: Tags must match `^[a-zA-Z0-9_-]{1,30}$`
-- **Normalization**: Tags stored in lowercase canonical form
-- **Deduplication**: Duplicate tags (case-insensitive) automatically removed
-- **404 on unknown**: Filtering by non-existent tag returns 404
+Interactive API documentation with all endpoints, request/response schemas, and examples.
 
 ## Development
 
