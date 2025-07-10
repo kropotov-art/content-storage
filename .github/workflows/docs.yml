@@ -1,0 +1,88 @@
+name: Generate OpenAPI Docs
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+    
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+    
+    - name: Make gradlew executable
+      run: chmod +x gradlew
+    
+    - name: Build JAR (skip tests) for api-docs endpoint
+      run: ./gradlew -x test bootJar
+    
+    - name: Start application in background
+      run: |
+        nohup java -jar build/libs/*.jar > app.log 2>&1 &
+        echo $! > app.pid
+    
+    - name: Wait for application health check
+      run: |
+        for i in {1..30}; do
+          if curl -sf http://localhost:8080/actuator/health; then
+            echo "Application is ready"
+            break
+          fi
+          echo "Waiting for application... ($i/30)"
+          sleep 2
+        done
+    
+    - name: Generate openapi.yaml
+      run: ./gradlew openapi
+    
+    - name: Install redoc-cli
+      run: npm install -g redoc-cli
+    
+    - name: Create docs directory
+      run: mkdir -p docs
+    
+    - name: Bundle ReDoc HTML
+      run: |
+        redoc-cli bundle build/openapi/openapi.yaml -o docs/index.html \
+            --title "Content Storage API" \
+            --options.theme.colors.primary.main="#1976d2"
+    
+    - name: Stop application
+      run: |
+        if [ -f app.pid ]; then
+          kill $(cat app.pid) || true
+        fi
+    
+    - name: Configure git
+      run: |
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config user.name "github-actions[bot]"
+    
+    - name: Commit and push docs
+      run: |
+        git add docs/index.html
+        if git diff --cached --quiet; then
+          echo "No changes to API documentation"
+        else
+          git commit -m "docs: update API documentation [skip ci]"
+          git push
+        fi

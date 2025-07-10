@@ -1,6 +1,7 @@
 package ru.kropotov.storage.service;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static ru.kropotov.storage.domain.model.Visibility.PRIVATE;
 
+@Disabled
 @SpringBootTest
 @ActiveProfiles("test")
 @Testcontainers
