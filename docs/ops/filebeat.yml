@@ -1,0 +1,18 @@
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      hints.enabled: true
+      templates:
+        - condition:
+            contains:
+              docker.container.labels.stack: storage
+          config:
+            - type: container
+              paths:
+                - /var/lib/docker/containers/${data.docker.container.id}/*.log
+processors:
+  - add_docker_metadata: ~
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+
+logging.level: info

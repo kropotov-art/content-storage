@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: content-storage
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017}
+      username: root
+      password: root
+      authentication-database: admin
+      database: content_storage
+      auto-index-creation: true
+  servlet:
+    multipart:
+      enabled: true            # ???????? StandardServletMultipartResolver
+      file-size-threshold: 0   # 0 -> ????? ?????
+      max-file-size: -1
+      max-request-size: -1
+  jackson:
+    time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
+  security:
+    user:
+      name: disabled
+      password: disabled
+
+storage:
+  maxTags: 5
+  cleanupHours: 4
+  cleanupInterval: PT1H  # ISO-8601 duration format
+  janitorBatchSize: 1000
+
+server:
+  port: 8080
+  tomcat:
+    max-swallow-size: -1
+
+logging:
+  level:
+    com.example.filestore: INFO
+    org.springframework.web.servlet.mvc.method.annotation: DEBUG
