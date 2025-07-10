@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Content Storage Service | content-storage</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Content Storage Service" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="https://kropotov-art.github.io/content-storage/" />
+<meta property="og:url" content="https://kropotov-art.github.io/content-storage/" />
+<meta property="og:site_name" content="content-storage" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Content Storage Service" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","headline":"Content Storage Service","name":"content-storage","url":"https://kropotov-art.github.io/content-storage/"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/content-storage/assets/css/style.css?v=true">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/content-storage/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      
+      <h1><a href="https://kropotov-art.github.io/content-storage/">content-storage</a></h1>
+      
+
+      <h1 id="content-storage-service">Content Storage Service</h1>
+
+<p>A Spring Boot 3.5.3 file storage service with Google Drive-style tagging, built for multi-pod Kubernetes deployment.</p>
+
+<h2 id="features">Features</h2>
+
+<ul>
+  <li><strong>Two-phase uploads</strong>: Reserve → Upload → Finalize pattern for resilient multi-pod operation</li>
+  <li><strong>Object storage</strong>: MinIO S3-compatible backend</li>
+  <li><strong>Metadata storage</strong>: MongoDB with optimized indexes</li>
+  <li><strong>Tags (Drive-style)</strong>: 0-5 tags per file, case-insensitive, open vocabulary</li>
+  <li><strong>Visibility control</strong>: Public/Private files with secure download links</li>
+  <li><strong>State management</strong>: PENDING → READY file state machine</li>
+  <li><strong>Janitor service</strong>: Automatic cleanup of orphaned uploads</li>
+</ul>
+
+<h2 id="quick-start-with-docker">Quick Start with Docker</h2>
+
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+  <li>Docker and Docker Compose</li>
+  <li>MongoDB instance</li>
+  <li>MinIO instance</li>
+</ul>
+
+<h3 id="build-and-run">Build and Run</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Clone the repository</span>
+git clone &lt;repository-url&gt;
+<span class="nb">cd </span>content-storage
+
+<span class="c"># Build the Docker image</span>
+docker build <span class="nt">-t</span> content-storage:latest <span class="nb">.</span>
+
+<span class="c"># Run with environment variables</span>
+docker run <span class="nt">-p</span> 8080:8080 <span class="se">\</span>
+  <span class="nt">-e</span> <span class="nv">SPRING_DATA_MONGODB_URI</span><span class="o">=</span>mongodb://localhost:27017/content-storage <span class="se">\</span>
+  <span class="nt">-e</span> <span class="nv">MINIO_ENDPOINT</span><span class="o">=</span>http://localhost:9000 <span class="se">\</span>
+  <span class="nt">-e</span> <span class="nv">MINIO_ACCESS_KEY</span><span class="o">=</span>minioadmin <span class="se">\</span>
+  <span class="nt">-e</span> <span class="nv">MINIO_SECRET_KEY</span><span class="o">=</span>minioadmin <span class="se">\</span>
+  content-storage:latest
+</code></pre></div></div>
+
+<h3 id="using-docker-compose-development">Using Docker Compose (Development)</h3>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">version</span><span class="pi">:</span> <span class="s1">'</span><span class="s">3.8'</span>
+<span class="na">services</span><span class="pi">:</span>
+  <span class="na">app</span><span class="pi">:</span>
+    <span class="na">build</span><span class="pi">:</span> <span class="s">.</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">8080:8080"</span>
+    <span class="na">depends_on</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">mongodb</span>
+      <span class="pi">-</span> <span class="s">minio</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="na">SPRING_DATA_MONGODB_URI</span><span class="pi">:</span> <span class="s">mongodb://mongodb:27017/content-storage</span>
+      <span class="na">MINIO_ENDPOINT</span><span class="pi">:</span> <span class="s">http://minio:9000</span>
+      <span class="na">MINIO_ACCESS_KEY</span><span class="pi">:</span> <span class="s">minioadmin</span>
+      <span class="na">MINIO_SECRET_KEY</span><span class="pi">:</span> <span class="s">minioadmin</span>
+
+  <span class="na">mongodb</span><span class="pi">:</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">mongo:7.0</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">27017:27017"</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">mongodb_data:/data/db</span>
+
+  <span class="na">minio</span><span class="pi">:</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">minio/minio:latest</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">9000:9000"</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">9001:9001"</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="na">MINIO_ROOT_USER</span><span class="pi">:</span> <span class="s">minioadmin</span>
+      <span class="na">MINIO_ROOT_PASSWORD</span><span class="pi">:</span> <span class="s">minioadmin</span>
+    <span class="na">command</span><span class="pi">:</span> <span class="s">server /data --console-address ":9001"</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">minio_data:/data</span>
+
+<span class="na">volumes</span><span class="pi">:</span>
+  <span class="na">mongodb_data</span><span class="pi">:</span>
+  <span class="na">minio_data</span><span class="pi">:</span>
+</code></pre></div></div>
+
+<h2 id="api-reference">API Reference</h2>
+
+<p><a href="https://kropotov-art.github.io/content-storage/docs"><img src="https://img.shields.io/badge/docs-ReDoc-orange" alt="OpenAPI Docs" /></a></p>
+
+<p>Interactive API documentation with all endpoints, request/response schemas, and examples.</p>
+
+<h2 id="development">Development</h2>
+
+<h3 id="local-development-setup">Local Development Setup</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Start dependencies</span>
+docker-compose up <span class="nt">-d</span> mongodb minio
+
+<span class="c"># Run tests with coverage</span>
+./gradlew clean <span class="nb">test </span>jacocoTestReport
+
+<span class="c"># Run the application</span>
+./gradlew bootRun
+</code></pre></div></div>
+
+<h3 id="testing">Testing</h3>
+
+<p>The project includes comprehensive test suites:</p>
+
+<ul>
+  <li><strong>Unit tests</strong>: Individual component testing</li>
+  <li><strong>Integration tests</strong>: Full Spring context with Testcontainers</li>
+  <li><strong>Coverage target</strong>: ≥85% line / 80% branch coverage (JaCoCo)</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Run all tests</span>
+./gradlew <span class="nb">test</span>
+
+<span class="c"># Generate coverage report</span>
+./gradlew jacocoTestReport
+
+<span class="c"># Check coverage thresholds</span>
+./gradlew jacocoTestCoverageVerification
+</code></pre></div></div>
+
+<h3 id="build">Build</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Build JAR</span>
+./gradlew bootJar
+
+<span class="c"># Build Docker image</span>
+docker build <span class="nt">-t</span> content-storage:latest <span class="nb">.</span>
+</code></pre></div></div>
+
+<h2 id="cicd-pipeline">CI/CD Pipeline</h2>
+
+<p>The project includes a GitHub Actions workflow that:</p>
+
+<ol>
+  <li><strong>Runs tests</strong> with JaCoCo coverage on every PR/push</li>
+  <li><strong>Builds and pushes</strong> Docker images to GitHub Container Registry on main branch</li>
+  <li><strong>Caches</strong> Gradle dependencies for faster builds</li>
+  <li><strong>Reports coverage</strong> to Codecov (optional)</li>
+</ol>
+
+<h3 id="github-container-registry">GitHub Container Registry</h3>
+
+<p>Images are automatically published to:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ghcr.io/&lt;github-username&gt;/content-storage:latest
+ghcr.io/&lt;github-username&gt;/content-storage:main-&lt;sha&gt;
+</code></pre></div></div>
+
+<h3 id="using-published-images">Using Published Images</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Pull and run latest image</span>
+docker pull ghcr.io/&lt;github-username&gt;/content-storage:latest
+docker run <span class="nt">-p</span> 8080:8080 ghcr.io/&lt;github-username&gt;/content-storage:latest
+</code></pre></div></div>
+
+<h2 id="configuration">Configuration</h2>
+
+<h3 id="environment-variables">Environment Variables</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">SPRING_DATA_MONGODB_URI</code></td>
+      <td>MongoDB connection string</td>
+      <td><code class="language-plaintext highlighter-rouge">mongodb://localhost:27017/content-storage</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MINIO_ENDPOINT</code></td>
+      <td>MinIO server URL</td>
+      <td><code class="language-plaintext highlighter-rouge">http://localhost:9000</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MINIO_ACCESS_KEY</code></td>
+      <td>MinIO access key</td>
+      <td><code class="language-plaintext highlighter-rouge">minioadmin</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MINIO_SECRET_KEY</code></td>
+      <td>MinIO secret key</td>
+      <td><code class="language-plaintext highlighter-rouge">minioadmin</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MINIO_BUCKET_NAME</code></td>
+      <td>S3 bucket name</td>
+      <td><code class="language-plaintext highlighter-rouge">content-storage</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">FILE_JANITOR_CLEANUP_INTERVAL</code></td>
+      <td>Cleanup interval</td>
+      <td><code class="language-plaintext highlighter-rouge">PT1H</code> (1 hour)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="health-checks">Health Checks</h3>
+
+<p>The application exposes health check endpoints:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Application health</span>
+GET /actuator/health
+
+<span class="c"># Detailed health with dependencies</span>
+GET /actuator/health/mongo
+GET /actuator/health/minio
+</code></pre></div></div>
+
+<h2 id="architecture">Architecture</h2>
+
+<h3 id="two-phase-upload-process">Two-Phase Upload Process</h3>
+<ol>
+  <li><strong>Reserve</strong>: <code class="language-plaintext highlighter-rouge">POST /api/files</code> → Returns upload URL + metadata</li>
+  <li><strong>Upload</strong>: Client uploads file to presigned S3 URL</li>
+  <li><strong>Finalize</strong>: Automatic transition from PENDING → READY state</li>
+</ol>
+
+<h3 id="database-indexes">Database Indexes</h3>
+
+<p><strong>MongoDB Collections:</strong></p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">files</code>: Compound indexes on owner+name, tags, visibility, state+uploadTs</li>
+  <li><code class="language-plaintext highlighter-rouge">tags</code>: Unique index on name (case-insensitive)</li>
+</ul>
+
+<p><strong>Optimizations:</strong></p>
+<ul>
+  <li>Partial index for READY files only</li>
+  <li>Compound indexes for efficient filtering and sorting</li>
+  <li>Automatic index creation on startup</li>
+</ul>
+
+<h2 id="license">License</h2>
+
+<p><a href="LICENSE">MIT License</a></p>
+
+
+      
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+  </body>
+</html>
