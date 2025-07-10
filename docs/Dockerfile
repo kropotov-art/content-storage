@@ -1,31 +1,30 @@
 # syntax=docker/dockerfile:1
 
-# ─── Stage 1: Build the application ──────────────────────────────────
-# Use Alpine with Java 21 and install Gradle for building
-FROM alpine/java:21-jdk AS build
-
-# Install Gradle
-RUN apk add --no-cache gradle
-
+# ─── Build stage ─────────────────────────────────────────────────
+FROM gradle:8.1.1-jdk21 AS build
 WORKDIR /app
 
-# Copy all project files
-COPY . .
+# Copy sources and gradle wrapper
+COPY --chown=gradle:gradle . .
 
-# Build the fat JAR
-RUN gradle clean bootJar --no-daemon
+# Ensure wrapper is executable and build
+RUN chmod +x gradlew && \
+    ./gradlew clean bootJar --no-daemon
 
 
-# ─── Stage 2: Create the runtime image ──────────────────────────────
-FROM eclipse-temurin:21-jre-alpine
+# ─── Package stage ────────────────────────────────────────────────
+FROM openjdk:21-jdk-slim
 
 # Create non-root user for security
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN groupadd --system appgroup && useradd --system --ingroup appgroup appuser
 
 WORKDIR /app
 
-# Copy the built JAR from the builder stage
+# Copy JAR from build stage
 COPY --from=build /app/build/libs/*.jar app.jar
+
+# Install wget for healthcheck
+RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
 # Drop privileges
 USER appuser:appgroup
@@ -33,37 +32,9 @@ USER appuser:appgroup
 # Expose application port
 EXPOSE 8080
 
-# Install wget for health check
-RUN apk add --no-cache wget
-
 # Health check endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD wget -qO- http://localhost:8080/actuator/health || exit 1
-
-# Launch the application
-ENTRYPOINT ["java", "-jar", "app.jar"] ──────────────────────────────
-FROM eclipse-temurin:21-jre-alpine
-
-# Create non-root user for security
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-WORKDIR /app
-
-# Copy the built JAR from the builder stage
-COPY --from=build /app/build/libs/*.jar app.jar
-
-# Drop privileges
-USER appuser:appgroup
-
-# Expose application port
-EXPOSE 8080
-
-# Install wget for health check
-RUN apk add --no-cache wget
-
-# Health check endpoint
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD wget -qO- http://localhost:8080/actuator/health || exit 1
+  CMD wget -qO- http://localhost:8080/actuator/health || exit 1
 
 # Launch the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
