@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Profile;
 @Configuration
 public class SwaggerConfig {
 
-    @Profile({"dev", "local", "test"})
+    @Profile({"default", "dev", "local", "test"})
     @Configuration
     @SecurityScheme(
             name = "xUserId",

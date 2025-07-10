@@ -20,7 +20,7 @@ import java.util.List;
  */
 @Slf4j
 @Component
-@Profile({"dev", "local", "test"})
+@Profile({"default", "dev", "local", "test"})
 public class UserIdAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String USER_ID_HEADER = "X-User-Id";
