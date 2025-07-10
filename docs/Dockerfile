@@ -1,38 +1,39 @@
-# ─── build stage ─────────────────────────────────────────────
-FROM eclipse-temurin:21-jdk-alpine AS build
+# syntax=docker/dockerfile:1
+
+# ─── Stage 1: Build the application ──────────────────────────────────
+FROM alpine/java:21-jdk AS build
 WORKDIR /app
 
-# Copy Gradle wrapper and build files for dependency resolution
-COPY gradlew settings.gradle build.gradle gradle/ ./
-RUN chmod +x gradlew
+# Copy project files (including Gradle wrapper)
+COPY --chown=gradle:gradle . .
 
-# Download dependencies to cache them
-RUN ./gradlew --no-daemon build -x test || true
+# Build the fat JAR
+RUN gradle clean bootJar --no-daemon
 
-# Copy source code
-COPY src ./src
 
-# Build the application
-RUN ./gradlew --no-daemon clean bootJar \
-    && mv build/libs/*.jar app.jar
-
-# ─── slim runtime stage ──────────────────────────────────────
+# ─── Stage 2: Create the runtime image ──────────────────────────────
 FROM eclipse-temurin:21-jre-alpine
-ARG JAR=app.jar
+
+# Create non-root user for security
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
 WORKDIR /app
+
+# Copy the built JAR from the builder stage
+COPY --from=build /app/build/libs/*.jar app.jar
+
+# Drop privileges
+USER appuser:appgroup
+
+# Expose application port
+EXPOSE 8080
 
 # Install wget for health check
 RUN apk add --no-cache wget
 
-# Copy the built JAR from build stage
-COPY --from=build /app/app.jar ./
-
-# Expose the application port
-EXPOSE 8080
-
-# Health check
+# Health check endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD wget -qO- http://localhost:8080/actuator/health || exit 1
 
-# Run the application
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+# Launch the application
+ENTRYPOINT ["java", "-jar", "app.jar"]
