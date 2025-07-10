@@ -82,7 +82,7 @@ volumes:
 
 ## API Reference
 
-[![OpenAPI Docs](https://img.shields.io/badge/docs-ReDoc-orange)](https://artemkropotov.github.io/content-storage/docs)
+[![OpenAPI Docs](https://img.shields.io/badge/docs-ReDoc-orange)](https://kropotov-art.github.io/content-storage/docs)
 
 Interactive API documentation with all endpoints, request/response schemas, and examples.
 
