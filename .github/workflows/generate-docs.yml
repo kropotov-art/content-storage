@@ -1,4 +1,3 @@
-# .github/workflows/generate-docs.yml
 name: Generate OpenAPI Docs
 
 on:
@@ -45,17 +44,31 @@ jobs:
           nohup java -jar build/libs/*.jar --server.port=$PORT > app.log 2>&1 &
           echo $! > app.pid
 
-      - name: Wait for actuator
+      - name: Wait for application
         run: |
           for i in {1..30}; do
-            curl -sf http://localhost:$PORT/actuator/health && break
+            if curl -sf http://localhost:$PORT/actuator/health; then
+              echo "Application is up on port $PORT"
+              break
+            fi
+            echo "Waiting for application... ($i/30)"
             sleep 2
           done
+          if ! curl -sf http://localhost:$PORT/actuator/health; then
+            echo "ERROR: Application failed to start"
+            cat app.log
+            exit 1
+          fi
 
       - name: Fetch OpenAPI spec
         run: |
           mkdir -p build/openapi
-          curl -s http://localhost:$PORT/v3/api-docs > build/openapi/openapi.yaml
+          if curl --fail -sS http://localhost:$PORT/v3/api-docs > build/openapi/openapi.yaml; then
+            echo "Fetched OpenAPI from /v3/api-docs"
+          else
+            echo "/v3/api-docs not available, trying /actuator/openapi"
+            curl --fail -sS http://localhost:$PORT/actuator/openapi > build/openapi/openapi.yaml
+          fi
 
       - name: Install redoc-cli
         run: npm install -g redoc-cli
