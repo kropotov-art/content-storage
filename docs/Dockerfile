@@ -2,7 +2,7 @@
 
 # ─── Stage 1: Build the application ──────────────────────────────────
 # Use official Gradle image with Java 21 for building
-FROM gradle:8.1.1-jdk21 AS build
+FROM alpine/java:21-jdk AS build
 WORKDIR /app
 
 # Copy project files (including Gradle wrapper)
