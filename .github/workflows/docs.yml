@@ -3,6 +3,8 @@ name: Generate OpenAPI Docs
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
 
 jobs:
   generate-docs:
@@ -37,14 +39,16 @@ jobs:
     
     - name: Start application in background
       run: |
-        nohup java -jar build/libs/*.jar > app.log 2>&1 &
+        PORT=$(shuf -i 9000-9999 -n 1)
+        echo "PORT=$PORT" >> $GITHUB_ENV
+        nohup java -jar build/libs/*.jar --server.port=$PORT > app.log 2>&1 &
         echo $! > app.pid
     
     - name: Wait for application health check
       run: |
         for i in {1..30}; do
-          if curl -sf http://localhost:8080/actuator/health; then
-            echo "Application is ready"
+          if curl -sf http://localhost:$PORT/actuator/health; then
+            echo "Application is ready on port $PORT"
             break
           fi
           echo "Waiting for application... ($i/30)"
@@ -52,7 +56,7 @@ jobs:
         done
     
     - name: Generate openapi.yaml
-      run: ./gradlew openapi
+      run: ./gradlew -Pspringdoc.url=http://localhost:$PORT/v3/api-docs openapi
     
     - name: Install redoc-cli
       run: npm install -g redoc-cli
@@ -63,8 +67,8 @@ jobs:
     - name: Bundle ReDoc HTML
       run: |
         redoc-cli bundle build/openapi/openapi.yaml -o docs/index.html \
-            --title "Content Storage API" \
-            --options.theme.colors.primary.main="#1976d2"
+            --title "Content Storage API"
+        touch docs/.nojekyll
     
     - name: Stop application
       run: |
@@ -79,10 +83,10 @@ jobs:
     
     - name: Commit and push docs
       run: |
-        git add docs/index.html
+        git add docs/index.html docs/.nojekyll
         if git diff --cached --quiet; then
-          echo "No changes to API documentation"
+          echo "No API changes"
         else
-          git commit -m "docs: update API documentation [skip ci]"
+          git commit -m "docs: update API HTML [skip ci]"
           git push
         fi
