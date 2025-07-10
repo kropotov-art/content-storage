@@ -82,7 +82,8 @@ volumes:
 
 ## API Reference
 
-[![OpenAPI Docs](https://img.shields.io/badge/docs-ReDoc-orange)](https://kropotov-art.github.io/content-storage/docs)
+- **ReDoc**: [![ReDoc](https://img.shields.io/badge/docs-ReDoc-orange)](https://kropotov-art.github.io/content-storage/)
+- **Swagger UI**: [![Swagger UI](https://img.shields.io/badge/docs-Swagger%20UI-brightgreen)](https://editor.swagger.io/?url=https://kropotov-art.github.io/content-storage/docs/openapi.yaml)
 
 Interactive API documentation with all endpoints, request/response schemas, and examples.
 
