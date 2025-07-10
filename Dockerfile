@@ -20,7 +20,8 @@ RUN gradle clean bootJar --no-daemon
 FROM openjdk:21-jdk-slim
 
 # Create non-root user
-RUN groupadd --system appgroup && useradd --system --ingroup appgroup appuser
+RUN groupadd --system appgroup && \
+    useradd --system --gid appgroup --no-create-home --home-dir /app appuser
 
 WORKDIR /app
 
